@@ -173,76 +173,82 @@ procedure TDbGridForFastReportCore.ShowReport(AGrid: TDBGrid);
 var
   loTask: ITask;
 begin
-  loTask := TTask.Create(
-    procedure()
-    begin
-      TThread.Synchronize(nil,
-        procedure
-        begin
-          CreateFrxDBDataset(AGrid.DataSource.DataSet,
-            procedure(FrxDBDataset: TfrxDBDataset)
-            begin
-              CreateFrxReport(FrxDBDataset,
-                procedure(Report: TfrxReport)
-                begin
-                  Report.Font.Assign(AGrid.Font);
-                  CreateFrxReportPage(Report,
-                    procedure(Page: TfrxReportPage)
-                    begin
-                      CreateFrxPageHeader(Page,
-                        procedure(PageHeader: TfrxPageHeader)
-                        begin
-                          with CreateFrxMemoView(PageHeader) do
+  AGrid.DataSource.DataSet.DisableControls;
+  try
+    loTask := TTask.Create(
+      procedure()
+      begin
+        TThread.Synchronize(nil,
+          procedure
+          begin
+            CreateFrxDBDataset(AGrid.DataSource.DataSet,
+              procedure(FrxDBDataset: TfrxDBDataset)
+              begin
+                CreateFrxReport(FrxDBDataset,
+                  procedure(Report: TfrxReport)
+                  begin
+                    Report.Font.Assign(AGrid.Font);
+                    CreateFrxReportPage(Report,
+                      procedure(Page: TfrxReportPage)
+                      begin
+                        CreateFrxPageHeader(Page,
+                          procedure(PageHeader: TfrxPageHeader)
                           begin
-                            Top := 1.25 * fr1cm;
-                            Left := 0;
-                            Height := 0;
-                            Frame.Typ := [ftBottom];
-                            HAlign := haRight;
-                            ParentFont := False;
-                            VAlign := vaCenter;
-                            CreateUniqueName;
-                            Align := baWidth;
-                          end;
-
-                          CreateFrxMasterData(Page, FrxDBDataset,
-                            procedure(MasterData: TfrxMasterData)
-                            var
-                              loI, loLeft: Integer;
+                            with CreateFrxMemoView(PageHeader) do
                             begin
-                              loLeft := 14;
-                              for loI := 0 to Pred(AGrid.Columns.Count) do
+                              Top := 1.25 * fr1cm;
+                              Left := 0;
+                              Height := 0;
+                              Frame.Typ := [ftBottom];
+                              HAlign := haRight;
+                              ParentFont := False;
+                              VAlign := vaCenter;
+                              CreateUniqueName;
+                              Align := baWidth;
+                            end;
+
+                            CreateFrxMasterData(Page, FrxDBDataset,
+                              procedure(MasterData: TfrxMasterData)
+                              var
+                                loI, loLeft: Integer;
                               begin
-                                with CreateFrxMemoView(PageHeader,
-                                  AGrid.Columns[loI].Title.Caption) do
-                                  SetBounds(loLeft, 28,
-                                    AGrid.Columns[loI].Width, 16);
-                                with CreateFrxMemoView(MasterData) do
+                                loLeft := 14;
+                                for loI := 0 to Pred(AGrid.Columns.Count) do
                                 begin
-                                  DataSet := FrxDBDataset;
-                                  DataField := AGrid.Columns[loI]
-                                    .Field.FieldName;
-                                  SetBounds(loLeft, 28,
-                                    AGrid.Columns[loI].Width, 16);
+                                  with CreateFrxMemoView(PageHeader,
+                                    AGrid.Columns[loI].Title.Caption) do
+                                    SetBounds(loLeft, 28,
+                                      AGrid.Columns[loI].Width, 16);
+                                  with CreateFrxMemoView(MasterData) do
+                                  begin
+                                    DataSet := FrxDBDataset;
+                                    DataField := AGrid.Columns[loI]
+                                      .Field.FieldName;
+                                    SetBounds(loLeft, 28,
+                                      AGrid.Columns[loI].Width, 16);
+                                  end;
+                                  loLeft := loLeft + AGrid.Columns[loI]
+                                    .Width + 2;
                                 end;
-                                loLeft := loLeft + AGrid.Columns[loI].Width + 2;
-                              end;
-                            end);
-                        end);
-                    end);
-                  try
-                    Report.ShowProgress := True;
-                    Report.OldStyleProgress := True;
-                    Report.PrepareReport(True);
-                    Report.ShowPreparedReport;
-                  finally
-                    Report.Free;
-                  end;
-                end);
-            end);
-        end);
-    end);
-  loTask.Start;
+                              end);
+                          end);
+                      end);
+                    try
+                      Report.ShowProgress := True;
+                      Report.OldStyleProgress := True;
+                      Report.PrepareReport(True);
+                      Report.ShowPreparedReport;
+                    finally
+                      Report.Free;
+                    end;
+                  end);
+              end);
+          end);
+      end);
+    loTask.Start;
+  finally
+    AGrid.DataSource.DataSet.EnableControls;
+  end;
 end;
 
 { TDBGridHelper }
